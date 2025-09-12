@@ -1,3 +1,18 @@
+
+
+
+## 📁 Documentación
+
+El documento con todas las indicaciones de instalación se encuentra en la carpeta **docs** del repositorio.
+
+
+
+
+
+
+
+
+
 # Getting Started with Create React App
 
 This project was bootstrapped with [Create React App](https://github.com/facebook/create-react-app).
