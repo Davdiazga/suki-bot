@@ -1,5 +1,12 @@
+// Importamos React y los hooks useState y useEffect
 import React, { useState, useEffect } from "react";
 
+/* 
+    Función para obtener la respuesta de la IA (Ollama con modelo Llama2)
+  - Envía el texto que el usuario escribió como prompt
+  - Conecta con el endpoint local de Ollama en http://localhost:11434/api/generate
+  - Recibe la respuesta y la va construyendo
+*/
 async function getAIResponse(prompt) {
   const response = await fetch("http://localhost:11434/api/generate", {
     method: "POST",
@@ -12,10 +19,13 @@ async function getAIResponse(prompt) {
 
   while (true) {
     const { done, value } = await reader.read();
-    if (done) break;
+    if (done) break; // Cuando no hay más datos, salimos del bucle
+
+    // Decodificamos el fragmento recibido a texto
     const chunk = new TextDecoder("utf-8").decode(value);
 
     try {
+      // Cada línea contiene un objeto JSON con una parte de la respuesta
       const lines = chunk.trim().split("\n");
       for (let line of lines) {
         if (!line) continue;
@@ -27,18 +37,31 @@ async function getAIResponse(prompt) {
     }
   }
 
+  // Si no se recibió nada, devolvemos un mensaje por defecto
   return result || "🤔 No pude generar respuesta.";
 }
 
+/* 
+    Componente principal de la app: Suki, acompañante virtual
+  - Muestra un chat interactivo donde el usuario puede hablar con la IA
+  - Tiene modo oscuro/claro
+  - Muestra sugerencias de preguntas
+*/
 export default function App() {
+  // Estado con todos los mensajes del chat
   const [messages, setMessages] = useState([
     { from: "bot", text: "🌟 ¡Hola! Soy Suki tu Acompañante virtual. Estoy aquí para contarte historias y acompañarte 💛" }
   ]);
-  const [input, setInput] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [darkMode, setDarkMode] = useState(false);
-  const [typingText, setTypingText] = useState("");
+  const [input, setInput] = useState(""); // Texto actual que escribe el usuario
+  const [loading, setLoading] = useState(false); // Indicador de carga
+  const [darkMode, setDarkMode] = useState(false); // Alternar modo oscuro
+  const [typingText, setTypingText] = useState(""); // Texto que simula que Suki está escribiendo
 
+  /*
+    - Función para enviar un mensaje
+    - Añade el mensaje del usuario al historial
+    - Llama a la IA y muestra su respuesta con efecto de escritura
+  */
   const handleSend = async (customPrompt) => {
     const text = customPrompt || input;
     if (!text.trim()) return;
@@ -51,7 +74,7 @@ export default function App() {
 
     const reply = await getAIResponse(text);
 
-    // Efecto de escritura letra por letra ✨
+    // Efecto de escritura letra por letra
     let typed = "";
     for (let char of reply) {
       typed += char;
@@ -64,6 +87,7 @@ export default function App() {
     setLoading(false);
   };
 
+  //Preguntas sugeridas que el usuario puede tocar para enviarlas directamente
   const preguntasSugeridas = [
     "Hazme sentir acompañado 💛",
     "Cuéntame un cuento corto y divertido",
@@ -120,8 +144,8 @@ export default function App() {
         width: "100vw",
         display: "flex",
         background: darkMode
-          ? "linear-gradient(135deg,#232526,#414345)"
-          : "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)",
+          ? "linear-gradient(135deg,#232526,#414345)" // Fondo oscuro
+          : "linear-gradient(135deg, #fbc2eb 0%, #a6c1ee 100%)", // Fondo claro
         fontFamily: "'Poppins', sans-serif",
         padding: "30px",
         boxSizing: "border-box",
@@ -129,7 +153,8 @@ export default function App() {
         transition: "0.5s ease"
       }}
     >
-      {/* Panel izquierdo */}
+
+      {/*Panel izquierdo: lista de preguntas sugeridas y botón de modo oscuro */}
       <div
         style={{
           width: "300px",
@@ -142,6 +167,7 @@ export default function App() {
           backdropFilter: "blur(10px)"
         }}
       >
+        {/* Cabecera con avatar y nombre del bot */}
         <div style={{ textAlign: "center" }}>
           <img
             src="https://cdn-icons-png.flaticon.com/512/4712/4712105.png"
@@ -150,6 +176,8 @@ export default function App() {
           />
           <h2 style={{ color: "#ff6f61", fontSize: "24px", margin: 0 }}>💖 Suki Bot</h2>
         </div>
+
+        {/* Lista de botones con preguntas sugeridas */}
         <div
           style={{
             flex: 1,
@@ -183,6 +211,8 @@ export default function App() {
             </button>
           ))}
         </div>
+
+        {/* Botón para alternar modo claro/oscuro */}
         <button
           onClick={() => setDarkMode(!darkMode)}
           style={{
@@ -200,7 +230,7 @@ export default function App() {
         </button>
       </div>
 
-      {/* Panel derecho chat */}
+      {/*Panel derecho: área del chat */}
       <div
         style={{
           flex: 1,
@@ -225,6 +255,7 @@ export default function App() {
           🤖 SUKI Acompañante Virtual
         </h1>
 
+        {/* Contenedor de los mensajes del chat */}
         <div
           style={{
             flex: 1,
@@ -236,6 +267,7 @@ export default function App() {
             scrollBehavior: "smooth"
           }}
         >
+          {/* Cada mensaje se muestra con distinto diseño según si es del usuario o del bot */}
           {messages.map((msg, i) => (
             <div
               key={i}
@@ -246,6 +278,7 @@ export default function App() {
                 marginBottom: "20px"
               }}
             >
+              {/* Avatar del bot */}
               {msg.from === "bot" && (
                 <img
                   src="https://cdn-icons-png.flaticon.com/512/4712/4712105.png"
@@ -258,6 +291,8 @@ export default function App() {
                   }}
                 />
               )}
+
+              {/* Burbuja del mensaje */}
               <div
                 style={{
                   maxWidth: "70%",
@@ -272,6 +307,8 @@ export default function App() {
               >
                 <b>{msg.from === "user" ? "Tú" : "Suki"}:</b> {msg.text}
               </div>
+
+              {/* Avatar del usuario */}
               {msg.from === "user" && (
                 <img
                   src="https://cdn-icons-png.flaticon.com/512/2922/2922506.png"
@@ -286,6 +323,8 @@ export default function App() {
               )}
             </div>
           ))}
+
+          {/* Texto de "Suki está escribiendo..." mientras llega la respuesta */}
           {typingText && (
             <div style={{ display: "flex", alignItems: "center", gap: "10px" }}>
               <img
@@ -308,6 +347,7 @@ export default function App() {
           )}
         </div>
 
+        {/* Entrada de texto + botón enviar */}
         <div style={{ marginTop: "20px", display: "flex", gap: "15px" }}>
           <input
             value={input}
@@ -341,3 +381,4 @@ export default function App() {
     </div>
   );
 }
+
